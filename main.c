@@ -629,6 +629,7 @@ static inline int evaluate_position2(Position* position){
     int enemy = position->side == white ? black : white;
     int piece_count;
     U64 pieces;
+    if(get_population_count(position->bits[ally * 6 + K] == 0ULL)) score -= 100000;
     for(int i = P; i <= K; i++){
         pieces = position->bits[ally * 6 + i];
         piece_count = get_population_count(position->bits[ally * 6 + i]);
@@ -686,10 +687,11 @@ void engine_move(Position* position){
     int nodes = 0, score;
     int depth = 1;
     U16 move;
-    while(nodes < 0x7fff){
+    while(nodes < 0xffff){
         nodes = 0;
         score = -negamax(position, -0xffffff, 0xffffff, depth, depth, &move, &nodes);
-        printf("\nScore: %d Depth: %d Nodes: %d\n", score, depth, nodes);
+        //engine evaluations/debug
+        //printf("\nScore: %d Depth: %d Nodes: %d\n", score, depth, nodes);
         depth++;
     }
     make_move(position, move);
@@ -698,34 +700,46 @@ void read_move(U16 word){
     int source;
     int dest;
     m_decode_move(source, dest, word);
-    printf("\n%s%s", index_to_coord[source], index_to_coord[dest]);
+    printf("%s%s\n", index_to_coord[source], index_to_coord[dest]);
 }
 U16 parse_move(){
     int source;
     int dest;
     char buff[100];
     U16 move;
-    printf("\n");
     fgets(buff, sizeof(buff), stdin);
-    printf("%s", buff);
     source = (int)(buff[0] - 'a') + 8 * (7 - (int)buff[1] + '1');
     dest = (int)(buff[2] - 'a') + 8 * (7 - (int)buff[3] + '1');
     move = m_encode_move(source, dest);
-    read_move(move);
     return move;
 }
+U16 query_for_move(Position* position){
+    Move_tab tab = move_generator(position);
+    while(1){
+        U16 move = parse_move();
+        for(int i = 0; i < tab.count; i++){
+            if(move == tab.moves[i]){
+                return move;
+            }
+        }
+        print_position(position);
+        printf("\nhere are possible moves you dummy\n");
+        for(int i = 0; i < tab.count; i++){
+            read_move(tab.moves[i]);
+        }
+    }
+}
+
 int main(){
     Position position;
     memset(&position, 0, sizeof(Position));
     set_standard_position(&position);
     print_position(&position);
     for(int i = 0; i < 100; i++){
-        make_move(&position, parse_move());
+        make_move(&position, query_for_move(&position));
         print_position(&position);
         engine_move(&position);
-        //make_move(&position, parse_move());
         print_position(&position);
     }
-
     return 0;
 }
