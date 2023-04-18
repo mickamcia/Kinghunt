@@ -399,7 +399,7 @@ void print_position(Position* pos){
     {
         printf("%s", unicode_letters[i]);
     }
-    printf("\nSide to move: %s", pos->side == white ? "white" : "black");
+    printf("\nSide to move: %s\n", pos->side == white ? "white" : "black");
 }
 static inline U64 generate_bishop_attacks(int square, U64 blocker){
     U64 temp = 0;
@@ -611,7 +611,7 @@ Move_tab move_generator(Position* position){
     }
     return tab;
 }
-static inline int evaluate_position(Position* position){
+static inline int evaluate_position_simple(Position* position){
     int score = 0;
     int ally = position->side == white ? white : black;
     int enemy = position->side == white ? black : white;
@@ -623,7 +623,7 @@ static inline int evaluate_position(Position* position){
     score += 1  *(get_population_count(position->bits[ally * 6 + P]) - get_population_count(position->bits[enemy * 6 + P]));
     return score;
 }
-static inline int evaluate_position2(Position* position){
+static inline int evaluate_position_complex(Position* position){
     int score = 0;
     int ally = position->side == white ? white : black;
     int enemy = position->side == white ? black : white;
@@ -668,7 +668,7 @@ int negamax(Position* position, int alpha, int beta, int depth, int depth_start,
     Move_tab tab = move_generator(position);
     if(depth <= 0){
         (*nodes)++;
-        return evaluate_position2(position);
+        return evaluate_position_complex(position);
     }
     for(int i = 0; i < tab.count; i++){
         Position copy;
